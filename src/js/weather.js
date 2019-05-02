@@ -1,6 +1,6 @@
 import './general';
 
-//http://api.openweathermap.org/data/2.5/forecast/daily?zip=97405&units=imperial&appid=c59493e7a8643f49446baf0d5ed9d646
+//http://api.openweathermap.org/data/2.5/forecast?zip=97405&units=imperial&appid=c59493e7a8643f49446baf0d5ed9d646
 
 /* Create a class called Weather
 - Part 1 - Retrieve the weather information when the user clicks the buttobn
@@ -9,10 +9,11 @@ import './general';
         this.state = {
           zipcode: "",
           city: {},
-          dates: [],
+          forecast: [],
+          simpleForecast: [], 
           selectedDate: null
         };
-        this.url = "http://api.openweathermap.org/data/2.5/forecast/daily?zip=";
+        this.url = "http://api.openweathermap.org/data/2.5/forecast?zip=";
         this.apikey = "&units=imperial&appid=c59493e7a8643f49446baf0d5ed9d646";
     - initialize instance variables for UI elements
         the form
@@ -25,23 +26,25 @@ import './general';
   - Write the method onFormSubmit.  It should
     - prevent the form from being sumbitted to the server
     - get the zip code from the UI and put it in a variable
-    - call fetch with the url zipcdoe and apikey
+    - call fetch with the url zipcode and apikey
       - when the response comes back THEN parse the json
       - when that finishes THEN 
         - set the city in the state object
-        - set the dates in the state object
+        - set the forecast in the state object
+        - set the simpleForecast in the state object 
+            by calling the method parseForecast (see bottom of file)
         - set the selectedDate to null
         - clear the zipcode from the UI
-        - call the method renderWeatherList and pass this.state.dates as the arg
-  - Write a first version of renderWeatherList.  It has weatherDays (which is an array) as a parameter.
-    - console.log the value of weatherDays.
+        - call the method renderWeatherList and pass this.state.simpleForecast as the arg
+  - Write a first version of renderWeatherList.  It has forecast (which is 5 element simplified forcast array) as a parameter.
+    - console.log the value of forecast.
   - Edit the constructor to bind the class to the method renderWeatherList
 END OF PART 1 - TEST AND DEBUG YOUR APP
 - Part 2 - Format ONE weather list item and the weather list as a whole
   - Write the method renderWeatherListItem
     - This method returns a template literal containing the html for the weather for ONE day.
-      It gets called in renderWeatherList.  It has 2 parameters a weatherDay and an index.
-      The weatherDay is a js object from the list part of the return from the weather api.
+      It gets called in renderWeatherList.  It has 2 parameters a forecastDay and an index.
+      The forecastDay is a js object from the "parsed" version of the return from the weather api.
     - Format the weather information for one day on the html page.  At a minimum it should include
       - the month and day as well as the weekday
       - the high and low temperatures for that day
@@ -49,11 +52,11 @@ END OF PART 1 - TEST AND DEBUG YOUR APP
     - CUT the html for ONE day from your html page into the body of your method.
       - Enclose the html in ``.
       - Replace the hardcoded month and day, weekday, high and low temperatures 
-        with template strings that use the properties of the weatherDay object
+        with template strings that use the properties of the forecastDay object
       - Return the template literal 
   - Edit the body of the method renderWeather list.  It should
     - Create the html for each of the weather list items.  Use the array method map to do this.
-      const itemsHTML = weatherDays.map((weatherDay, index) => this.renderWeatherListItem(weatherDay, index)).join('');
+      const itemsHTML = forecast.map((forecastDay, index) => this.renderWeatherListItem(forecastDay, index)).join('');
     - Set the inner html of the weatherList element on the page to 
       - a div element styled with weather-list flex-parent
       - that contains the itemsHTML from above
@@ -78,3 +81,38 @@ END OF PART 3 - TEST AND DEBUG YOUR APP
 */
 
 // Don't forget to instantiate the a weather object!
+
+/*
+  parseForecast(forecast) {
+    let simpleForecast = new Array();
+    const NOON = 4;
+    const SIXAM = 2;
+    const SIXPM = 6;
+    const NINEPM = 7;
+    const MORNING = SIXAM;
+    const DAY = NOON;
+    const EVENING = SIXPM;
+    const NIGHT = NINEPM;
+    const PERDAY = 8;
+    const DAYS = 5;
+    for (let i = 0; i < forecast.length; i+=PERDAY) {
+      let oneDay = new Object();
+      oneDay.dt = forecast[i + NOON].dt;
+      oneDay.temp = forecast[i + NOON].main.temp;
+      oneDay.minTemp = forecast[i + SIXAM].main.temp_min;
+      oneDay.maxTemp = forecast[i + SIXPM].main.temp_max;
+      oneDay.morningTemp = 
+      oneDay.dayTemp = 
+      oneDay.eveningTemp = 
+      oneDay.nightTemp = 
+      oneDay.description = 
+      oneDay.icon = 
+      oneDay.pressure = 
+      oneDay.wind = 
+      oneDay.humidity = 
+      simpleForecast.push(oneDay);
+    }
+    return simpleForecast;
+  }
+
+*/
