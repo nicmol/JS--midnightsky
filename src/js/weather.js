@@ -1,7 +1,61 @@
 import './general';
 
-//http://api.openweathermap.org/data/2.5/forecast?zip=97405&units=imperial&appid=c59493e7a8643f49446baf0d5ed9d646
+//http://api.openweathermap.org/data/2.5/forecast?zip=97405&units=imperial&appid=d60d1eca6a54cfe99b646a5dd1ec0242
 
+class Weather{
+  constructor(){
+    this.state = {
+      zipcode: "",
+      city: {},
+      forecast: [],
+      simpleForecast: [], 
+      selectedDate: null
+    };
+    //Add my own API key
+    this.url = "http://api.openweathermap.org/data/2.5/forecast?zip=";
+    this.apikey = "&units=imperial&appid=d60d1eca6a54cfe99b646a5dd1ec0242";
+
+    this.$form = document.getElementById('zip-form');
+    this.$zipcodeInputElement = document.getElementById('zipcode');
+    this.$weatherListDiv = document.getElementById('weatherList');
+    this.$currentDayDiv = document.getElementById('currentDay');
+/* 
+    onFormSubmit()
+    {
+      this.onFormSubmit.submit
+    }; */
+
+    this.onFormSubmit = this.onFormSubmit.bind(this);
+    this.onFormSubmit();
+    this.renderWeatherList = this.renderWeatherList.bind(this);
+  }
+
+  onFormSubmit(){
+    form.preventDefault();
+    zp = this.$zipcodeInputElement;
+    //The call to fetch
+    fetch(`${this.url}${this.state.zipcode}${this.apikey}`)
+      .then(response => response.json())
+      .then(data => { 
+        this.state.city = data.city;
+        this.state.forecast = data.list;
+            this.state.simpleForecast = parseForecast(this.state.forecast);
+        this.state.selectedDate = null;
+        this.$zipcode.value = "";
+        console.log(this.state);
+    })
+    .catch(error => {
+      alert('There was a problem getting info!'); 
+    });
+    this.renderWeatherList(this.state.simpleForecast);
+  }
+
+  renderWeatherList(forecast){
+ console.log(forecast);
+  }
+}
+
+let weather = new Weather();
 /* Create a class called Weather
 - Part 1 - Retrieve the weather information when the user clicks the buttobn
   - Create the constructor
