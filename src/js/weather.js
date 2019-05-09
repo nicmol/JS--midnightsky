@@ -19,19 +19,22 @@ class Weather{
     this.$zipcodeInputElement = document.getElementById('zipcode');
     this.$weatherListDiv = document.getElementById('weatherList');
     this.$currentDayDiv = document.getElementById('currentDay');
-/* 
-    onFormSubmit()
+ 
+  /*   onFormSubmit()
     {
       this.onFormSubmit.submit
-    }; */
+    };  */
+    this.$form.addEventListener('submit', event => {
+      this.onFormSubmit(event);
+    })
 
     this.onFormSubmit = this.onFormSubmit.bind(this);
     this.onFormSubmit();
     this.renderWeatherList = this.renderWeatherList.bind(this);
   }
 
-  onFormSubmit(){
-    form.preventDefault();
+  onFormSubmit(event){
+    event.preventDefault();
     zp = this.$zipcodeInputElement;
     //The call to fetch
     fetch(`${this.url}${this.state.zipcode}${this.apikey}`)
