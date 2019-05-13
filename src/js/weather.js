@@ -15,47 +15,159 @@ class Weather{
     this.url = "http://api.openweathermap.org/data/2.5/forecast?zip=";
     this.apikey = "&units=imperial&appid=d60d1eca6a54cfe99b646a5dd1ec0242";
 
-    this.$form = document.getElementById('zip-form');
+    this.$form = document.getElementById('zipForm');
     this.$zipcodeInputElement = document.getElementById('zipcode');
     this.$weatherListDiv = document.getElementById('weatherList');
     this.$currentDayDiv = document.getElementById('currentDay');
- 
-  /*   onFormSubmit()
-    {
-      this.onFormSubmit.submit
-    };  */
+
     this.$form.addEventListener('submit', event => {
       this.onFormSubmit(event);
     })
 
     this.onFormSubmit = this.onFormSubmit.bind(this);
-    this.onFormSubmit();
+    //this.onFormSubmit();
     this.renderWeatherList = this.renderWeatherList.bind(this);
+    this.parseForecast = this.parseForecast.bind(this);
+    this. renderCurrentDay = this. renderCurrentDay.bind(this);
   }
 
   onFormSubmit(event){
     event.preventDefault();
-    zp = this.$zipcodeInputElement;
+    let zp = this.$zipcodeInputElement.value;
     //The call to fetch
-    fetch(`${this.url}${this.state.zipcode}${this.apikey}`)
+    fetch(`${this.url}${zp}${this.apikey}`)
       .then(response => response.json())
       .then(data => { 
         this.state.city = data.city;
         this.state.forecast = data.list;
-            this.state.simpleForecast = parseForecast(this.state.forecast);
+        this.state.simpleForecast = this.parseForecast(this.state.forecast, -7);
         this.state.selectedDate = null;
-        this.$zipcode.value = "";
+        this.$zipcodeInputElement.value = "";
+        this.renderWeatherList(this.state.simpleForecast);
         console.log(this.state);
     })
     .catch(error => {
-      alert('There was a problem getting info!'); 
+      alert('There was a problem getting info! ' + error); 
     });
-    this.renderWeatherList(this.state.simpleForecast);
+    this. clearCurrentDay();
+  }
+
+  renderWeatherListItem(forecastDay, index){
+    let d = new Date(forecastDay.dt * 1000)
+    d = d.toString().substring(0, 15);
+    return `
+    <div class="weather-list-item">
+      ${d}<br>
+      High:  ${forecastDay.maxTemp}&deg;F<br>
+      Low: ${forecastDay.minTemp}&deg;F
+    </div>
+    `
+
   }
 
   renderWeatherList(forecast){
- console.log(forecast);
+    console.log(forecast);
+    const itemsHTML = forecast.map((forecastDay, index) => 
+      this.renderWeatherListItem(forecastDay, index)).join('');
+    this.$weatherListDiv.innerHTML = itemsHTML;
+
+    let weatherListItems = document.getElementsByClassName("weather-list-item")
+    for(let i=0;i < weatherListItems.length; i++){
+   
+      weatherListItems[i].addEventListener("click", () => 
+        {this.renderCurrentDay(i)});  
+    }
+
   }
+
+  renderCurrentDay(index){
+    let newForecast = this.state.simpleForecast[index]
+    let d = new Date(newForecast.dt * 1000) 
+    let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    //var dayName = days[d.getDay()];
+    let dayTemplate = `
+    <div class="current-day">
+       <h2>${days[d.getDay()]} in ${this.state.city.name}</h2><br>
+       <h4> ${newForecast.description} <img src="http://openweathermap.org/img/w/${newForecast.icon}.png" alt="icon"></h4><br>
+        Morning Temperature: ${newForecast.morningTemp}&deg;F<br>
+        Day Temperatur: ${newForecast.dayTemp}&deg;F<br>
+        Evening Temperature: ${newForecast.eveningTemp}&deg;F<br>
+        Night Temperature: ${newForecast.nightTemp}&deg;F<br>
+        Wind: ${newForecast.wind} mph<br>
+        Humidity: ${newForecast.humidity}%<br>
+        Pressure: ${newForecast.pressure} mb<br>
+        High:  ${newForecast.maxTemp}&deg;F<br>
+        Low: ${newForecast.minTemp}&deg;F
+    </div>
+   `
+   this.$currentDayDiv.innerHTML = dayTemplate;
+  }
+
+  clearCurrentDay(){
+    this.$currentDayDiv.innerHTML = "";
+  }
+
+  getIndexOfMidnight(firstDate, timezoneOffset) {
+    let dt = firstDate * 1000;
+    let date = new Date(dt);
+    let utcHours = date.getUTCHours();
+    let localHours = utcHours + timezoneOffset;
+    let firstMidnightIndex = (localHours > 2 ) ? 
+        Math.round((24 - localHours)/3) : 
+        Math.abs(Math.round(localHours / 3));
+    return firstMidnightIndex;
+  }
+
+  findMinTemp(forecast, indexOfMidnight) {
+    let min = forecast[indexOfMidnight].main.temp_min;
+    for (let i = indexOfMidnight + 1; i < indexOfMidnight + 8; i++)
+      if (forecast[i].main.temp_min < min)
+        min = forecast[i].main.temp_min;
+    return min;
+  }
+
+  findMaxTemp(forecast, indexOfMidnight) {
+    let max = forecast[indexOfMidnight].main.temp_max;
+    for (let i = indexOfMidnight + 1; i < indexOfMidnight + 8; i++)
+      if (forecast[i].main.temp_max > max)
+        max = forecast[i].main.temp_max;
+    return max;
+  }
+
+  parseForecast(forecast, timezoneOffset) {
+    let simpleForecast = new Array();
+    const MIDNIGHT = this.getIndexOfMidnight(forecast[0].dt, timezoneOffset);
+    const NOON = 4;
+    const SIXAM = 2;
+    const SIXPM = 6;
+    const NINEPM = 7;
+    const MORNING = SIXAM;
+    const DAY = NOON;
+    const EVENING = SIXPM;
+    const NIGHT = NINEPM;
+    const PERDAY = 8;
+    const DAYS = 4;
+    for (let i = MIDNIGHT; i < forecast.length - NINEPM; i+=PERDAY) {
+      let oneDay = new Object();
+      oneDay.dt = forecast[i + NOON].dt;
+      oneDay.temp = forecast[i + NOON].main.temp;
+      oneDay.minTemp = this.findMinTemp(forecast, i);
+      oneDay.maxTemp = this.findMaxTemp(forecast, i);
+      oneDay.morningTemp = forecast[i + MORNING].main.temp;
+      oneDay.dayTemp = forecast[i + DAY].main.temp;
+      oneDay.eveningTemp = forecast[i + EVENING].main.temp;
+      oneDay.nightTemp = forecast[i + NIGHT].main.temp;
+      oneDay.description = forecast[i + NOON].weather[0].description;
+      oneDay.icon = forecast[i].weather[0].icon;
+      oneDay.pressure = forecast[i].main.pressure;
+      oneDay.wind = forecast[i].wind.speed;
+      oneDay.humidity = forecast[i].main.humidity;
+      simpleForecast.push(oneDay);
+    }
+    return simpleForecast;
+  }
+
 }
 
 let weather = new Weather();
@@ -139,7 +251,7 @@ END OF PART 3 - TEST AND DEBUG YOUR APP
 
 // Don't forget to instantiate the a weather object!
 
-/*
+/* 
   parseForecast(forecast) {
     let simpleForecast = new Array();
     const NOON = 4;
@@ -170,6 +282,6 @@ END OF PART 3 - TEST AND DEBUG YOUR APP
       simpleForecast.push(oneDay);
     }
     return simpleForecast;
-  }
+  } */
 
-*/
+
